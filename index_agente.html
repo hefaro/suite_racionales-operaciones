@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <title>Math Master PWA</title>
+    <style>
+        :root { 
+            --primary: #6366f1; 
+            --accent: #f43f5e; 
+            --bg: #0f172a; 
+            --card: #1e293b; 
+            --text: #f8fafc; 
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            overflow: hidden; /* Evita scrolls innecesarios en la app */
+        }
+
+        .card { 
+            background: var(--card); 
+            padding: 1.5rem; 
+            border-radius: 28px; 
+            width: 92%; 
+            max-width: 380px; 
+            text-align: center; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+        }
+
+        /* --- ELIMINACIÓN DE FLECHAS (SPINNERS) --- */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] { 
+            -moz-appearance: textfield; /* Para Firefox */
+            appearance: textfield;
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 6px; 
+            align-items: center; 
+            margin: 1.5rem 0; 
+        }
+
+        input { 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            text-align: center; 
+            font-size: 1.4rem; 
+            font-weight: 900; 
+            background: #334155; 
+            border: 2px solid #475569; 
+            border-radius: 14px; 
+            color: white; 
+            transition: all 0.2s;
+        }
+
+        input:focus { 
+            border-color: var(--primary); 
+            outline: none; 
+            background: #475569;
+            transform: scale(1.05);
+        }
+
+        input[readonly] { 
+            background: rgba(99, 102, 241, 0.15); 
+            border-color: var(--primary); 
+            color: var(--primary); 
+        }
+
+        .symbol { font-weight: bold; color: #64748b; font-size: 1.1rem; }
+        .res-box { 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: #0f172a; 
+            border-radius: 12px; 
+            font-weight: 900; 
+            color: #fbbf24; 
+            border: 1px solid #fbbf24; 
+            font-size: 1rem;
+        }
+
+        .btn-group { display: flex; gap: 12px; margin-top: 10px; }
+        
+        .btn { 
+            flex: 1; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 1.1rem; 
+            border-radius: 18px; 
+            font-weight: 800; 
+            font-size: 1rem;
+            cursor: pointer; 
+            box-shadow: 0 4px 0px #4338ca; 
+            transition: all 0.1s;
+        }
+
+        .btn-sec { background: #475569; box-shadow: 0 4px #1e293b; }
+        
+        .btn:active { 
+            transform: translateY(3px); 
+            box-shadow: none; 
+        }
+
+        #msg { 
+            margin-top: 1.2rem; 
+            font-weight: 700; 
+            min-height: 1.5rem; 
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="card">
+    <div class="badge">MODO INTELIGENTE</div>
+    <h2 style="margin:0; color: var(--primary);">Intercambio Oculto</h2>
+    <p style="color: #94a3b8; font-size: 0.8rem; margin: 5px 0;">Descubre los números ocultos</p>
+    
+    <div id="mainGrid" class="grid"></div>
+
+    <button class="btn" onclick="check()">VERIFICAR POSICIONES</button>
+    
+    <div style="display: flex; gap: 15px;">
+        <button class="btn btn-sec" style="flex: 1;" onclick="location.reload()">REINTENTAR</button>
+        <button class="btn btn-sec" style="flex: 1;" onclick="window.location.href='index.html'">MENÚ</button>
+    </div>
+    
+    <div id="msg"></div>
+</div>
+
+
+<script>
+    // Registro del Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+    }
+
+    // Banco de datos (Lógica de generación aleatoria para 30 juegos)
+    const bancoJuegos = [];
+    for(let i=0; i<30; i++) {
+        let s = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+        bancoJuegos.push({
+            sol: s,
+            h: [s[0]+s[1]-s[2], (s[3]-s[4])*s[5], s[6]+s[7]+s[8]],
+            v: [(s[0]+s[3])*s[6], s[1]-s[4]-s[7], s[2]-s[5]-s[8]]
+        });
+    }
+
+    let juego = bancoJuegos[Math.floor(Math.random() * 30)];
+
+    function init() {
+        const grid = document.getElementById('mainGrid');
+        grid.innerHTML = `
+            <input type="number" id="v1" placeholder="?"><div class="symbol">+</div><input type="number" id="v2" placeholder="?"><div class="symbol">-</div><input type="number" id="v3" placeholder="?"><div class="symbol">=</div><div class="res-box">${juego.h[0]}</div>
+            <div class="symbol">+</div><div></div><div class="symbol">-</div><div></div><div class="symbol">-</div><div></div><div></div>
+            <input type="number" id="v4" placeholder="?"><div class="symbol">-</div><input type="number" id="v5" value="${juego.sol[4]}" readonly><div class="symbol">*</div><input type="number" id="v6" placeholder="?"><div class="symbol">=</div><div class="res-box">${juego.h[1]}</div>
+            <div class="symbol">*</div><div></div><div class="symbol">-</div><div></div><div class="symbol">-</div><div></div><div></div>
+            <input type="number" id="v7" placeholder="?"><div class="symbol">+</div><input type="number" id="v8" placeholder="?"><div class="symbol">+</div><input type="number" id="v9" placeholder="?"><div class="symbol">=</div><div class="res-box">${juego.h[2]}</div>
+            <div class="symbol">=</div><div></div><div class="symbol">=</div><div></div><div class="symbol">=</div><div></div><div></div>
+            <div class="res-box">${juego.v[0]}</div><div></div><div class="res-box">${juego.v[1]}</div><div></div><div class="res-box">${juego.v[2]}</div><div></div><div></div>
+        `;
+    }
+
+    function check() {
+        const v = Array.from({length: 9}, (_, i) => parseInt(document.getElementById('v' + (i+1)).value));
+        const m = document.getElementById('msg');
+        const unique = new Set(v.filter(n => !isNaN(n)));
+
+        if (v.includes(NaN)) { m.innerText = "⚠️ ¡Completa el tablero!"; m.style.color = "#fbbf24"; return; }
+        if (unique.size !== 9) { m.innerText = "🚫 ¡No puedes usar números repetidos!"; m.style.color = "#f43f5e"; return; }
+
+        // Validación matemática real basada en los resultados mostrados
+        const h1 = v[0] + v[1] - v[2] === juego.h[0];
+        const h2 = (v[3] - v[4]) * v[5] === juego.h[1];
+        const h3 = v[6] + v[7] + v[8] === juego.h[2];
+        const v1 = (v[0] + v[3]) * v[6] === juego.v[0];
+        const v2 = v[1] - v[4] - v[7] === juego.v[1];
+        const v3 = v[2] - v[5] - v[8] === juego.v[2];
+
+        if (h1 && h2 && h3 && v1 && v2 && v3) {
+            m.innerText = "🏆 ¡INCREÍBLE! ¡Lo has resuelto!";
+            m.style.color = "#4ade80";
+        } else {
+            m.innerText = "❌ Ups... algo no cuadra. ¡Sigue intentando!";
+            m.style.color = "#f43f5e";
+        }
+    }
+    init();
+</script>
+</body>
+</html>

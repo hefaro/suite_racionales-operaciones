@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado de Logro - Nivel Experto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f43f5e;
+            --neon-blue: #0ea5e9;
+            --neon-purple: #a855f7;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* Marco de Neón Animado */
+        .diploma-container {
+            position: relative;
+            background: var(--card);
+            width: 90%;
+            max-width: 800px;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 4px solid var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue), inset 0 0 15px rgba(14, 165, 233, 0.2);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(168, 85, 247, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 90%, rgba(244, 63, 94, 0.1) 0%, transparent 20%);
+        }
+
+        .header {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 5px rgba(14, 165, 233, 0.5));
+        }
+
+        .mascot-space {
+            font-size: 50px;
+            margin: 15px 0;
+            filter: drop-shadow(0 0 10px var(--neon-purple));
+        }
+
+        .content {
+            margin: 30px 0;
+        }
+
+        .label {
+            font-size: 1rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .student-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            color: white;
+            margin: 15px 0;
+            text-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .details {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .highlight {
+            color: var(--neon-purple);
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--neon-purple);
+        }
+
+        .grade-badge {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid #22c55e;
+            border-radius: 50px;
+            color: #4ade80;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+        }
+
+        .footer-buttons {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            transition: 0.3s;
+        }
+
+        .btn-print { background: var(--neon-blue); color: white; }
+        .btn-menu { background: #475569; color: white; }
+        
+        @media print {
+            .footer-buttons { display: none; }
+            body { background: white; color: black; }
+            .diploma-container { border: 2px solid black; box-shadow: none; color: black; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="diploma-container">
+    <div class="header">
+        <p class="label">Reconocimiento Académico</p>
+        <h1>CERTIFICADO DE LOGRO</h1>
+    </div>
+
+    <div class="mascot-space">🐝</div>
+
+    <div class="content">
+        <p class="label">Otorgado a:</p>
+        <div id="disp-nombre" class="student-name">Cargando...</div>
+        
+        <div class="details">
+            Por demostrar una capacidad analítica excepcional y superar satisfactoriamente todos los protocolos del desafío de: <br>
+            <span id="disp-tema" class="highlight">Cargando tema...</span>
+        </div>
+
+        <div id="disp-nota" class="grade-badge">CALIFICACIÓN: 0.0</div>
+    </div>
+
+    <div class="footer-buttons">
+        <button class="btn btn-print" onclick="window.print()">IMPRIMIR DIPLOMA</button>
+        <button class="btn btn-menu" onclick="window.location.href='index.html'">VOLVER AL INICIO</button>
+    </div>
+</div>
+
+<script>
+    // Función para obtener los datos de la URL
+    function cargarDatos() {
+        const params = new URLSearchParams(window.location.search);
+        
+        // Obtener valores (con valores por defecto por si falla la carga)
+        const nombre = params.get('nombre') || "Estudiante Destacado";
+        const nota = params.get('nota') || "5.0";
+        const tema = params.get('tema') || "Matemáticas Aplicadas";
+
+        // Inyectar en el HTML
+        document.getElementById('disp-nombre').innerText = nombre.toUpperCase();
+        document.getElementById('disp-tema').innerText = tema;
+        document.getElementById('disp-nota').innerText = `CALIFICACIÓN: ${nota}`;
+    }
+
+    // Ejecutar al cargar la página
+    window.onload = cargarDatos;
+</script>
+
+</body>
+</html>

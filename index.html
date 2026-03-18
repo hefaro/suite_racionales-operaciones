@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <title>Detective Matemático: Suite</title>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="card">
+    <div class="badge">CENTRO DE OPERACIONES</div>
+    <h1>Detective Matemático</h1>
+    <p>Selecciona tu nivel de despliegue</p>
+    
+    <div class="menu-container">
+        <div class="menu-title">Misiones Disponibles</div>
+        
+        <button class="btn-lvl lvl-basico" onclick="goTo('index_basico.html')">
+            <span>NOVATO</span>
+            <span class="symbol-hint">➕ ➖</span>
+        </button>
+
+        <button class="btn-lvl lvl-agente" onclick="goTo('index_agente.html')">
+            <span>AGENTE</span>
+            <span class="symbol-hint">✖️ ➖</span>
+        </button>
+
+        <button class="btn-lvl lvl-experto" onclick="goTo('index_experto.html')">
+            <span>EXPERTO</span>
+            <span class="symbol-hint">√  ^</span>
+        </button>
+
+        <button class="btn-lvl lvl-maestro" onclick="goTo('index_maestro.html')">
+            <span>MAESTRO</span>
+            <span class="symbol-hint">∑  ?</span>
+        </button>
+    </div>
+
+    <p style="margin-top: 25px; font-size: 0.7rem; opacity: 0.5;">v2.0 - Suite de Inteligencia de Datos</p>
+</div>
+
+<script src="script.js"></script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Registro de SW exitoso:', reg.scope))
+                .catch(err => console.warn('Error al registrar el SW:', err));
+        });
+    }
+</script>
+
+</body>
+</html>

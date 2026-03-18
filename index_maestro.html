@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Misión Maestro: Las 4 Operaciones</title>
+    <style>
+        :root { --primary: #a855f7; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #fbbf24; --success: #22c55e; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: var(--card); padding: 1.5rem; border-radius: 28px; width: 95%; max-width: 440px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        
+        .puzzle-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 30px 1fr 30px 1fr; 
+            gap: 15px 10px; 
+            align-items: center; 
+            margin: 2rem 0; 
+        }
+        
+        .pieza { 
+            aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; 
+            font-size: 1.1rem; font-weight: 800; background: #334155; border: 2px solid #475569; 
+            border-radius: 12px; color: white; cursor: pointer; transition: all 0.2s;
+        }
+        .pieza.selected { background-color: var(--primary) !important; border-color: white !important; transform: scale(1.1); box-shadow: 0 0 15px var(--primary); z-index: 10; }
+        .pieza.fija { border-color: #0ea5e9 !important; background-color: rgba(14, 165, 233, 0.2) !important; cursor: default; }
+        
+        .symbol { font-weight: 900; color: #94a3b8; font-size: 1.2rem; }
+        .res-box { background: #0f172a; border: 2px dashed var(--accent); color: var(--accent); border-radius: 8px; font-weight: 900; font-size: 1rem; height: 100%; display: flex; justify-content: center; align-items: center; min-height: 60px; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn { border: none; padding: 1rem; border-radius: 12px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; text-transform: uppercase; font-size: 0.9rem;}
+        .btn-check { background: var(--primary); box-shadow: 0 4px #7e22ce; }
+        .btn-help { background: #0ea5e9; box-shadow: 0 4px #0369a1; }
+        .btn-next { background: var(--success); width: 100%; margin-top: 15px; display: none; box-shadow: 0 4px #15803d; padding: 1rem; border-radius: 12px; font-weight: 800; cursor: pointer; color: white;}
+        #msg { margin-top: 15px; font-weight: 700; min-height: 1.5rem; font-size: 0.95rem; }
+        .grade-box { display: none; margin-top: 15px; background: #1e293b; border: 2px solid var(--success); padding: 10px; border-radius: 12px; color: var(--success); font-weight: 900; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div style="background:var(--primary); color:white; padding:4px 12px; border-radius:20px; font-size:0.75rem; margin-bottom:8px; display:inline-block; font-weight: bold;">MISIÓN <span id="lvlNum">1</span>/5</div>
+    <h2 style="margin:0; color: var(--primary);" id="lvlTitle">Suma de Monomios</h2>
+    <p style="color: #94a3b8; font-size: 0.8rem; margin: 5px 0;">Intercambia las piezas para completar las operaciones.</p>
+    
+    <div id="board" class="puzzle-grid"></div>
+
+    <div class="btn-group" id="controls">
+        <button class="btn btn-help" onclick="darAyuda()">💡 AYUDA</button>
+        <button class="btn btn-check" onclick="verificar()">VERIFICAR</button>
+    </div>
+    
+    <button id="nextBtn" class="btn-next" onclick="siguienteNivel()">SIGUIENTE MISIÓN 🚀</button>
+    
+    <div id="msg"></div>
+    <div id="gradeBox" class="grade-box">CALIFICACIÓN FINAL: 5.0 🏆</div>
+</div>
+
+<script>
+    const NIVELES = [
+        { title: "Misión 1: Sumas", sol: ["3x", "2x", "4x", "x", "6x", "3x"], piezas: ["x", "4x", "3x", "6x", "2x", "3x"], ops: ["+", "+", "+"], res: ["5x", "5x", "9x"] },
+        { title: "Misión 2: Restas", sol: ["5x", "2x", "8x", "3x", "4x", "x"], piezas: ["2x", "5x", "3x", "8x", "x", "4x"], ops: ["-", "-", "-"], res: ["3x", "5x", "3x"] },
+        { title: "Misión 3: Multiplicación", sol: ["2x", "3x", "4x", "2x", "5x", "x"], piezas: ["4x", "x", "2x", "5x", "3x", "2x"], ops: ["×", "×", "×"], res: ["6x²", "8x²", "5x²"] },
+        { title: "Misión 4: División", sol: ["6x²", "2x", "10x²", "5x", "8x²", "2x"], piezas: ["2x", "6x²", "5x", "10x²", "2x", "8x²"], ops: ["÷", "÷", "÷"], res: ["3x", "2x", "4x"] },
+        { title: "Misión Final: El Jefe", sol: ["4x", "3x", "3x", "4x", "9x²", "3x"], piezas: ["3x", "4x", "9x²", "4x", "3x", "3x"], ops: ["+", "×", "÷"], res: ["7x", "12x²", "3x"] }
+    ];
+
+    let currentLvl = 0;
+    let indexSeleccionado = null;
+    let fijas = [];
+    let piezasActuales = [];
+
+    function init(idx) {
+        currentLvl = idx;
+        piezasActuales = [...NIVELES[currentLvl].piezas];
+        fijas = [];
+        indexSeleccionado = null;
+        document.getElementById('lvlNum').innerText = idx + 1;
+        document.getElementById('lvlTitle').innerText = NIVELES[idx].title;
+        document.getElementById('nextBtn').style.display = 'none';
+        document.getElementById('controls').style.display = 'grid';
+        document.getElementById('msg').innerText = '';
+        render();
+    }
+
+    function render() {
+        const board = document.getElementById('board');
+        const nivel = NIVELES[currentLvl];
+        board.innerHTML = '';
+
+        for (let i = 0; i < 3; i++) {
+            const idx1 = i * 2;
+            const p1 = document.createElement('div');
+            p1.className = `pieza ${indexSeleccionado === idx1 ? 'selected' : ''} ${fijas.includes(idx1) ? 'fija' : ''}`;
+            p1.innerText = piezasActuales[idx1];
+            if (!fijas.includes(idx1)) p1.onclick = () => select(idx1);
+            board.appendChild(p1);
+
+            const op = document.createElement('div'); op.className = 'symbol'; op.innerText = nivel.ops[i]; board.appendChild(op);
+
+            const idx2 = i * 2 + 1;
+            const p2 = document.createElement('div');
+            p2.className = `pieza ${indexSeleccionado === idx2 ? 'selected' : ''} ${fijas.includes(idx2) ? 'fija' : ''}`;
+            p2.innerText = piezasActuales[idx2];
+            if (!fijas.includes(idx2)) p2.onclick = () => select(idx2);
+            board.appendChild(p2);
+
+            const eq = document.createElement('div'); eq.className = 'symbol'; eq.innerText = '='; board.appendChild(eq);
+            const rBox = document.createElement('div'); rBox.className = 'res-box'; rBox.innerText = nivel.res[i]; board.appendChild(rBox);
+        }
+    }
+
+    function select(idx) {
+        if (indexSeleccionado === null) {
+            indexSeleccionado = idx;
+        } else {
+            if (indexSeleccionado !== idx) {
+                [piezasActuales[indexSeleccionado], piezasActuales[idx]] = [piezasActuales[idx], piezasActuales[indexSeleccionado]];
+            }
+            indexSeleccionado = null;
+        }
+        render();
+    }
+
+    function darAyuda() {
+        const sol = NIVELES[currentLvl].sol;
+        for(let i=0; i < sol.length; i++) {
+            if(piezasActuales[i] !== sol[i] && !fijas.includes(i)) {
+                const correctVal = sol[i];
+                const whereIs = piezasActuales.indexOf(correctVal, i);
+                if(whereIs !== -1) {
+                    [piezasActuales[i], piezasActuales[whereIs]] = [piezasActuales[whereIs], piezasActuales[i]];
+                    fijas.push(i);
+                    break;
+                }
+            }
+        }
+        indexSeleccionado = null;
+        render();
+        document.getElementById('msg').innerText = "💡 Pieza bloqueada en su lugar.";
+        document.getElementById('msg').style.color = "#0ea5e9";
+    }
+
+    function verificar() {
+        const sol = NIVELES[currentLvl].sol;
+        const ops = NIVELES[currentLvl].ops;
+        const res = NIVELES[currentLvl].res;
+        let win = true;
+        let filasUsadas = [false, false, false];
+
+        for (let i = 0; i < 3; i++) {
+            const p1 = piezasActuales[i * 2], p2 = piezasActuales[i * 2 + 1];
+            let filaValidada = false;
+
+            for (let j = 0; j < 3; j++) {
+                if (filasUsadas[j]) continue;
+                if (ops[i] !== ops[j] || res[i] !== res[j]) continue;
+
+                const s1 = sol[j * 2], s2 = sol[j * 2 + 1];
+                let coincide = false;
+
+                if (ops[i] === '+' || ops[i] === '×') {
+                    coincide = (p1 === s1 && p2 === s2) || (p1 === s2 && p2 === s1);
+                } else {
+                    coincide = (p1 === s1 && p2 === s2);
+                }
+
+                if (coincide) {
+                    filaValidada = true;
+                    filasUsadas[j] = true;
+                    break;
+                }
+            }
+            if (!filaValidada) { win = false; break; }
+        }
+
+        const m = document.getElementById('msg');
+        if (win) {
+            m.innerText = "🏆 ¡SISTEMA ESTABLE! Cálculos perfectos.";
+            m.style.color = "var(--success)";
+            document.getElementById('nextBtn').style.display = 'block';
+            document.getElementById('controls').style.display = 'none';
+        } else {
+            m.innerText = "❌ Revisa las operaciones, la energía no fluye.";
+            m.style.color = "#f43f5e";
+        }
+    }
+
+function siguienteNivel() {
+        if (currentLvl < NIVELES.length - 1) {
+            init(currentLvl + 1);
+        } else {
+            // 1. Pedir el nombre al finalizar
+            let nombre = prompt("¡Felicidades! Ingresa tu nombre completo para el diploma:");
+            if (!nombre) nombre = "Estudiante";
+
+            // 2. Redirigir al archivo del diploma pasando el nombre y la nota
+            // El 5.0 es tu escala corregida de 0 a 5
+            window.location.href = `diploma.html?nombre=${encodeURIComponent(nombre)}&nota=5.0`;
+        }
+    }
+
+    init(0);
+</script>
+</body>
+</html>
